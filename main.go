@@ -2,19 +2,57 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type album struct {
-	ID    string `json: "id"`
-	Title string `json: "title"`
-	Price string `json: "price"`
+	ID     string  `json:"id"`
+	Title  string  `json:"title"`
+	Artist string  `json:"artist"`
+	Price  float64 `json:"price"`
 }
 
 var albums = []album{
-	{ID: "1", Title: "All of me", Artist: "John Legend", Price: 1000}
-	{ID: "2", Title: "Lover", Artist: "Taylor Swift", Price: 900}
+	{ID: "1", Title: "All of me", Artist: "John Legend", Price: 1000},
+	{ID: "2", Title: "Lover", Artist: "Taylor Swift", Price: 900},
 }
 
 func main() {
-	fmt.Printf("Test \n")
+	router := gin.Default()
+	router.GET("/albums", getAlbums)
+	router.GET("/albums/:id", getAlbumByID)
+	router.POST("/albums", postAlbums)
+
+	router.Run("localhost:3000")
+}
+
+func getAlbums(c *gin.Context) {
+	c.IndentedJSON(200, albums)
+}
+
+func getAlbumByID(c *gin.Context) {
+	id := c.Param("id")
+
+	for _, a := range albums {
+		if a.ID == id {
+			c.IndentedJSON(200, a)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Album Not Found"})
+}
+
+func postAlbums(c *gin.Context) {
+	var newAlbum album
+
+	if err := c.BindJSON((&newAlbum)); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	albums = append(albums, newAlbum)
+	c.IndentedJSON(http.StatusCreated, newAlbum)
+
 }
